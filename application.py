@@ -63,7 +63,6 @@ if uploaded_file is not None:
                 else None
             )
 
-            # Metirkler
             st.write("Sınıflandırma Metrikleri")
             acc = accuracy_score(y_test, y_pred)
             prec = precision_score(y_test, y_pred, average='macro')
@@ -77,7 +76,6 @@ if uploaded_file is not None:
             st.write(f"F1 Score: {f1:.2f}")
             st.write(f"MCC (Matthews Corr Coef): {mcc:.2f}")
 
-            # Confusion matrix
             st.write("Confusion Matrix")
             cm = confusion_matrix(y_test, y_pred)
             fig, ax = plt.subplots()
@@ -86,7 +84,6 @@ if uploaded_file is not None:
             ax.set_ylabel("Gerçek")
             st.pyplot(fig)
 
-            # ROC-AUC
             if y_prob is not None:
                 st.write("ROC-AUC Grafiği")
                 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
@@ -100,7 +97,6 @@ if uploaded_file is not None:
                 ax2.legend(loc="lower right")
                 st.pyplot(fig2)
 
-            # Başarı grafiği
             st.write("Başarı Bar Grafiği")
             metrics = {
                 "Accuracy": acc,
@@ -118,11 +114,9 @@ if uploaded_file is not None:
             ax3.set_title("Model Performans Metrikleri")
             st.pyplot(fig3)
 
-            # Modeli kaydet
             joblib.dump(model, "egitilmis_model.pkl")
             st.success("Model başarıyla 'egitilmis_model.pkl' dosyasına kaydedildi.")
 
-        # Harici test verisi
         st.subheader("Harici Test Verisi ile Tahmin")
         test_file = st.file_uploader("Test verisi yükle (.csv)", type="csv", key="test")
 
