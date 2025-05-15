@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import (
     confusion_matrix, accuracy_score, precision_score,
     recall_score, f1_score, matthews_corrcoef,
@@ -44,14 +44,47 @@ if uploaded_file is not None:
                 X, y, test_size=0.2, random_state=42
             )
 
+            # Model seçimine göre Grid Search veya direkt eğitim
             if model_name == "Lojistik Regresyon":
                 model = LogisticRegression(max_iter=1000)
+
             elif model_name == "Karar Ağacı":
                 model = DecisionTreeClassifier()
+
             elif model_name == "Rastgele Orman":
-                model = RandomForestClassifier()
+                param_grid = {
+                    'n_estimators': [50, 100],
+                    'max_depth': [None, 5, 10]
+                }
+                grid = GridSearchCV(
+                    estimator=RandomForestClassifier(),
+                    param_grid=param_grid,
+                    cv=5,
+                    scoring='accuracy',
+                    n_jobs=-1
+                )
+                grid.fit(X_train, y_train)
+                model = grid.best_estimator_
+                st.write("Grid Search sonucu en iyi parametreler:")
+                st.write(grid.best_params_)
+
             elif model_name == "Destek Vektör Makineleri":
-                model = SVC(probability=True)
+                param_grid = {
+                    'C': [0.1, 1, 10],
+                    'kernel': ['linear', 'rbf']
+                }
+                grid = GridSearchCV(
+                    estimator=SVC(probability=True),
+                    param_grid=param_grid,
+                    cv=5,
+                    scoring='accuracy',
+                    n_jobs=-1
+                )
+                grid.fit(X_train, y_train)
+                model = grid.best_estimator_
+                st.write("Grid Search sonucu en iyi parametreler:")
+                st.write(grid.best_params_)
+
             elif model_name == "K-En Yakın Komşu":
                 model = KNeighborsClassifier()
 
