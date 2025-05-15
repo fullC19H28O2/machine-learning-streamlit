@@ -44,7 +44,6 @@ if uploaded_file is not None:
                 X, y, test_size=0.2, random_state=42
             )
 
-            # Model seçimine göre Grid Search veya direkt eğitim
             if model_name == "Lojistik Regresyon":
                 model = LogisticRegression(max_iter=1000)
 
