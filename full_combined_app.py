@@ -1,6 +1,8 @@
 
 import streamlit as st
 import pandas as pd
+import numpy as np
+import joblib
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import (
     confusion_matrix, accuracy_score, precision_score,
@@ -8,7 +10,6 @@ from sklearn.metrics import (
 )
 import matplotlib.pyplot as plt
 import seaborn as sns
-import joblib
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -16,9 +17,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 
-st.set_page_config(page_title="ML Eğitimi ve Optimizasyon", layout="wide")
+st.set_page_config(page_title="ML Eğitimi, Optimizasyonu ve Tahmin", layout="wide")
 st.sidebar.title("🔍 Menü")
-page = st.sidebar.radio("Sayfa Seç", ["Model Eğitimi", "Hiperparametre Optimizasyonu"])
+page = st.sidebar.radio("Sayfa Seç", ["Model Eğitimi", "Hiperparametre Optimizasyonu", "Veri ile Tahmin"])
 
 uploaded_file = st.file_uploader("Veri seti yükle (.csv)", type="csv")
 
@@ -50,20 +51,18 @@ if uploaded_file is not None:
 
                 if model_name == "Lojistik Regresyon":
                     model = LogisticRegression(max_iter=1000)
-
                 elif model_name == "Karar Ağacı":
                     model = DecisionTreeClassifier()
-
                 elif model_name == "Rastgele Orman":
                     model = RandomForestClassifier()
-
                 elif model_name == "Destek Vektör Makineleri":
                     model = SVC(probability=True)
-
                 elif model_name == "K-En Yakın Komşu":
                     model = KNeighborsClassifier()
 
                 model.fit(X_train, y_train)
+                joblib.dump(model, "model.pkl")
+
                 y_pred = model.predict(X_test)
 
                 st.write("Sınıflandırma Metrikleri")
@@ -86,25 +85,22 @@ if uploaded_file is not None:
         elif page == "Hiperparametre Optimizasyonu":
             st.title("🔧 Hiperparametre Optimizasyonu")
             model_choice = st.selectbox("ML Modeli Seçin", ["Lojistik Regresyon", "Rastgele Orman", "Destek Vektör Makineleri"])
-            optimize = st.button("Optimize Et")
-
-            if optimize:
+            if st.button("Optimize Et"):
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
                 if model_choice == "Lojistik Regresyon":
                     param_grid = {"C": [0.1, 1, 10]}
                     grid = GridSearchCV(LogisticRegression(max_iter=1000), param_grid, cv=5, scoring='accuracy', n_jobs=-1)
-
                 elif model_choice == "Rastgele Orman":
                     param_grid = {"n_estimators": [50, 100], "max_depth": [5, 10, None]}
                     grid = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, scoring='accuracy', n_jobs=-1)
-
                 elif model_choice == "Destek Vektör Makineleri":
                     param_grid = {"C": [0.1, 1, 10], "kernel": ["linear", "rbf"]}
                     grid = GridSearchCV(SVC(probability=True), param_grid, cv=5, scoring='accuracy', n_jobs=-1)
 
                 grid.fit(X_train, y_train)
                 best_model = grid.best_estimator_
+                joblib.dump(best_model, "model.pkl")
                 y_pred = best_model.predict(X_test)
 
                 st.subheader("📌 En İyi Parametreler")
@@ -119,3 +115,28 @@ if uploaded_file is not None:
                 st.subheader("📄 Sınıflandırma Raporu")
                 report = classification_report(y_test, y_pred, output_dict=True)
                 st.dataframe(pd.DataFrame(report).transpose())
+
+        elif page == "Veri ile Tahmin":
+            st.title("🔮 Tahmin Yap (Veri Girişi)")
+
+            feature_columns = df.drop(columns=[target_column]).columns.tolist()
+            user_input = []
+
+            st.markdown("### 📋 Özellikleri Girin")
+
+            for col in feature_columns:
+                value = st.text_input(f"{col}", value="0")
+                try:
+                    user_input.append(float(value))
+                except ValueError:
+                    st.error(f"Lütfen '{col}' için sayısal bir değer girin.")
+                    st.stop()
+
+            if st.button("📈 Tahmin Et"):
+                try:
+                    model = joblib.load("model.pkl")
+                    prediction = model.predict([user_input])[0]
+                    st.success(f"🔮 Modelin tahmini: **{prediction}**")
+                except Exception as e:
+                    st.error(f"Model yüklenemedi ya da tahmin yapılamadı. Hata: {e}")
+                    st.info("Modelin 'model.pkl' olarak kaydedildiğinden emin olun.")
